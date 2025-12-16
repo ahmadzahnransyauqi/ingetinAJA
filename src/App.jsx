@@ -1,324 +1,175 @@
 import React, { useState, useEffect } from "react";
-import Header from "./components/Header.jsx";
-import LoginModal from "./components/LoginModal.jsx";
-import NoteModal from "./components/NoteModal.jsx";
-import Controls from "./components/Controls.jsx";
-import NoteCard from "./components/NoteCard.jsx";
-import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
-import { notesService } from "./services/api.js";
-import { notificationService } from "./services/notificationService.js";
-import "./index.css";
+import { AuthProvider } from "./contexts/AuthContext";
+import { TaskProvider } from "./contexts/TaskContext";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import TaskList from "./components/TaskList";
+import TaskModal from "./components/TaskModal";
+import AuthModal from "./components/AuthModal";
+import Notification from "./components/Notification";
+import { useAuth } from "./contexts/AuthContext";
+import { useTask } from "./contexts/TaskContext";
+import { CheckCircle } from "lucide-react";
 
-function AppContent() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [notes, setNotes] = useState([]);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [editingNote, setEditingNote] = useState(null);
-  const [filter, setFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+function MainApp() {
+  const { user, loading: authLoading } = useAuth();
+  const { createTask, updateTask } = useTask();
 
-  // Initialize notification service
-  useEffect(() => {
-    // Request notification permission saat app load
-    notificationService.requestPermission();
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [authMode, setAuthMode] = useState("login");
 
-    // Cleanup saat component unmount
-    return () => {
-      notificationService.stop();
-    };
-  }, []);
-
-  // Schedule notifications ketika notes berubah
-  useEffect(() => {
-    if (isAuthenticated && notes.length > 0) {
-      scheduleAllReminderNotifications();
-    }
-  }, [notes, isAuthenticated]);
-
-  const scheduleAllReminderNotifications = () => {
-    // Cancel semua notifications sebelumnya
-    notificationService.cancelAllNotifications();
-
-    // Schedule notifications untuk semua notes dengan reminder
-    notes.forEach((note) => {
-      if (note.reminder) {
-        notificationService.scheduleReminderNotification(note, note.reminder);
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadNotes();
-    } else {
-      setLoading(false);
-    }
-  }, [isAuthenticated, filter]);
-
-  const loadNotes = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await notesService.getAllNotes(filter);
-      setNotes(data || []); // Pastikan selalu array
-    } catch (error) {
-      console.error("Error loading notes:", error);
-      setError("Gagal memuat catatan: " + error.message);
-      setNotes([]); // Set empty array jika error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateNote = () => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
+  const handleAddTask = () => {
+    if (!user) {
+      setAuthMode("login");
+      setShowAuthModal(true);
       return;
     }
-    setEditingNote(null);
-    setShowNoteModal(true);
+    setEditingTask(null);
+    setShowTaskModal(true);
   };
 
-  const handleEditNote = (note) => {
-    setEditingNote(note);
-    setShowNoteModal(true);
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setShowTaskModal(true);
   };
 
-  const handleSaveNote = async (noteData) => {
-    try {
-      setError(null);
-      let result;
-      if (editingNote) {
-        result = await notesService.updateNote(editingNote.id, noteData);
-        // Pastikan result.data ada
-        const updatedNote = result.data || result.note || result;
-
-        // Cancel notifications lama dan schedule yang baru
-        notificationService.cancelNoteNotifications(editingNote.id);
-        if (noteData.reminder) {
-          notificationService.scheduleReminderNotification(
-            updatedNote,
-            noteData.reminder
-          );
-        }
-
-        setNotes((prevNotes) =>
-          prevNotes.map((note) =>
-            note.id === editingNote.id ? updatedNote : note
-          )
-        );
-      } else {
-        result = await notesService.createNote(noteData);
-        // Pastikan result.data ada
-        const newNote = result.data || result.note || result;
-
-        // Schedule notification untuk note baru
-        if (noteData.reminder) {
-          notificationService.scheduleReminderNotification(
-            newNote,
-            noteData.reminder
-          );
-        }
-
-        setNotes((prevNotes) => [newNote, ...prevNotes]);
-      }
-      setShowNoteModal(false);
-      setEditingNote(null);
-    } catch (error) {
-      console.error("Error saving note:", error);
-      setError("Gagal menyimpan note: " + error.message);
+  const handleSaveTask = async (taskData, taskId) => {
+    if (taskId) {
+      await updateTask(taskId, taskData);
+    } else {
+      await createTask(taskData);
     }
   };
 
-  const handleDeleteNote = async (noteId) => {
-    if (!window.confirm("Yakin ingin menghapus note ini?")) return;
-
-    try {
-      setError(null);
-      const result = await notesService.deleteNote(noteId);
-
-      if (result.status === "success") {
-        // Cancel notifications untuk note yang dihapus
-        notificationService.cancelNoteNotifications(noteId);
-
-        // Hapus note dari state
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
-      } else {
-        throw new Error(result.message || "Gagal menghapus note");
-      }
-    } catch (error) {
-      console.error("Error deleting note:", error);
-      setError(
-        "Gagal menghapus note: " +
-          (error.response?.data?.message || error.message)
-      );
-    }
+  const handleOpenAuthModal = (mode) => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
   };
-
-  // Filter notes dengan safety check
-  const filteredNotes = (notes || []).filter((note) => {
-    if (!note) return false; // Skip jika note undefined
-
-    switch (filter) {
-      case "withReminder":
-        return note.reminder;
-      case "withoutReminder":
-        return !note.reminder;
-      case "shared":
-        return note.collaborators && note.collaborators.length > 0;
-      default:
-        return true;
-    }
-  });
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-2xl font-extrabold shadow-lg mx-auto mb-4">
-            IA
-          </div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat aplikasi...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 p-6 font-sans">
-        <Header onLoginClick={() => setShowLoginModal(true)} />
-        <div className="max-w-6xl mx-auto text-center py-20">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Selamat datang di IngetinAja
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Catatan, pengingat, dan kolaborasi - semua simpel.
-          </p>
-          <button
-            onClick={() => setShowLoginModal(true)}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg"
-          >
-            Login untuk Memulai
-          </button>
-        </div>
-        {showLoginModal && (
-          <LoginModal
-            onClose={() => setShowLoginModal(false)}
-            onLoginSuccess={loadNotes}
-          />
-        )}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 p-6 font-sans">
-      <Header onLoginClick={() => setShowLoginModal(true)} />
+    <div className="min-h-screen bg-gray-50">
+      <Header />
 
-      <main className="max-w-6xl mx-auto grid gap-6">
-        <Controls
-          onCreateNote={handleCreateNote}
-          filter={filter}
-          onFilterChange={setFilter}
-        />
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <strong>Error: </strong> {error}
-            <button
-              onClick={() => setError(null)}
-              className="float-right text-red-900 font-bold"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Notification Status */}
-        {Notification.permission === "granted" && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <strong>✅ Notifikasi Aktif</strong> - Anda akan menerima reminder 1
-            jam dan 5 menit sebelum deadline
-          </div>
-        )}
-
-        {Notification.permission === "denied" && (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-            <strong>⚠️ Notifikasi Dinonaktifkan</strong> - Aktifkan notifikasi
-            browser untuk menerima reminder
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <p className="text-gray-600 mt-4">Memuat catatan...</p>
+      <main className="container mx-auto px-4 py-6">
+        {user ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Sidebar onAddTask={handleAddTask} onFilterChange={() => {}} />
+            <TaskList onEditTask={handleEditTask} />
           </div>
         ) : (
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-            {filteredNotes.length > 0 ? (
-              filteredNotes.map((note) => {
-                // Safety check untuk setiap note
-                if (!note || !note.id) {
-                  console.warn("Invalid note:", note);
-                  return null; // Skip invalid notes
-                }
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-xl shadow p-8 text-center">
+              <CheckCircle className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
+              <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                Selamat Datang di IngetinAja
+              </h1>
+              <p className="text-gray-600 mb-8">
+                Aplikasi pengelola tugas harian yang membantu Anda mengatur
+                pekerjaan, berkolaborasi dengan tim, dan tidak pernah melewatkan
+                deadline.
+              </p>
 
-                return (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    onEdit={handleEditNote}
-                    onDelete={() => handleDeleteNote(note.id)}
-                  />
-                );
-              })
-            ) : (
-              <div className="col-span-full text-center text-gray-500 py-12">
-                <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Belum ada catatan
-                </h3>
-                <p className="text-gray-600">
-                  Buat catatan pertama Anda untuk memulai
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="p-6 bg-indigo-50 rounded-lg">
+                  <div className="text-2xl mb-2">📋</div>
+                  <h3 className="font-bold text-gray-800 mb-2">Kelola Tugas</h3>
+                  <p className="text-sm text-gray-600">
+                    Buat, edit, dan pantau tugas dengan mudah
+                  </p>
+                </div>
+                <div className="p-6 bg-green-50 rounded-lg">
+                  <div className="text-2xl mb-2">👥</div>
+                  <h3 className="font-bold text-gray-800 mb-2">Kolaborasi</h3>
+                  <p className="text-sm text-gray-600">
+                    Bagikan tugas dengan tim dan kerjakan bersama
+                  </p>
+                </div>
+                <div className="p-6 bg-yellow-50 rounded-lg">
+                  <div className="text-2xl mb-2">⏰</div>
+                  <h3 className="font-bold text-gray-800 mb-2">Pengingat</h3>
+                  <p className="text-sm text-gray-600">
+                    Dapatkan notifikasi sebelum deadline tiba
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-x-4">
                 <button
-                  onClick={handleCreateNote}
-                  className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                  onClick={() => handleOpenAuthModal("login")}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-6 rounded-lg transition duration-200"
                 >
-                  + Buat Note Pertama
+                  Login
+                </button>
+                <button
+                  onClick={() => handleOpenAuthModal("register")}
+                  className="bg-white hover:bg-gray-50 text-indigo-600 font-medium py-3 px-6 rounded-lg border border-indigo-600 transition duration-200"
+                >
+                  Register
                 </button>
               </div>
-            )}
-          </section>
+            </div>
+          </div>
         )}
-
-        <footer className="text-center text-sm text-slate-500 mt-8">
-          IngetinAja - Catatan Pintar • Powered by Express.js + React
-        </footer>
       </main>
 
-      {showLoginModal && (
-        <LoginModal
-          onClose={() => setShowLoginModal(false)}
-          onLoginSuccess={loadNotes}
+      {/* Task Modal */}
+      {showTaskModal && (
+        <TaskModal
+          isOpen={showTaskModal}
+          onClose={() => setShowTaskModal(false)}
+          task={editingTask}
+          onSave={handleSaveTask}
         />
       )}
 
-      {showNoteModal && (
-        <NoteModal
-          note={editingNote}
-          onSave={handleSaveNote}
-          onClose={() => {
-            setShowNoteModal(false);
-            setEditingNote(null);
-          }}
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          mode={authMode}
         />
       )}
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-6 mt-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl">📝</span>
+                <h2 className="text-xl font-bold">IngetinAja</h2>
+              </div>
+              <p className="text-gray-400 text-sm mt-2">
+                Pengelola Tugas Harian yang Efektif
+              </p>
+            </div>
+
+            <div className="text-center md:text-right">
+              <p className="text-gray-400 text-sm">
+                &copy; {new Date().getFullYear()} IngetinAja. Semua hak
+                dilindungi.
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                Dibangun dengan React, Express, dan PostgreSQL
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -326,7 +177,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <TaskProvider>
+        <MainApp />
+      </TaskProvider>
     </AuthProvider>
   );
 }
