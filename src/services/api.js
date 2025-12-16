@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://api-ingetin-aja.vercel.app/api";
+// Hapus pengecekan env untuk sementara agar kita yakin URL-nya benar
+const API_URL = "https://api-ingetin-aja.vercel.app/api"; 
 
 const api = axios.create({
   baseURL: API_URL,
