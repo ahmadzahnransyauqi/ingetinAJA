@@ -1,39 +1,55 @@
 import axios from "axios";
 
-// Hapus pengecekan env untuk sementara agar kita yakin URL-nya benar
-const API_URL = "https://api-ingetin-aja.vercel.app/api"; 
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add auth token
+// INTERCEPTOR REQUEST - menambahkan token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+    console.log("🔄 Interceptor: Token =", token ? "ADA" : "TIDAK ADA");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("✅ Header Authorization ditambahkan");
+    } else {
+      console.warn("⚠️ Token tidak ditemukan, request akan gagal");
     }
+
     return config;
   },
   (error) => {
+    console.error("❌ Error interceptor:", error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for error handling
+// INTERCEPTOR RESPONSE - handle 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log("🔄 Response interceptor:", {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+    });
+
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      console.log("🔒 401 Unauthorized - Hapus token dan redirect");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Redirect ke halaman login
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/";
+      }
     }
+
     return Promise.reject(error);
   }
 );
