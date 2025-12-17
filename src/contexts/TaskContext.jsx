@@ -21,6 +21,15 @@ export const TaskProvider = ({ children }) => {
   const [currentSort, setCurrentSort] = useState("deadline");
 
   const loadTasks = useCallback(async () => {
+
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      setTasks([]); 
+      setSharedTasks([]);
+      return; 
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -32,13 +41,21 @@ export const TaskProvider = ({ children }) => {
       setSharedTasks(sharedTasks || []);
     } catch (error) {
       console.error("Failed to load tasks:", error);
-      setError("Failed to load tasks");
+
     } finally {
       setLoading(false);
     }
   }, []);
 
+
   const loadNotifications = useCallback(async () => {
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setNotifications([]);
+      return;
+    }
+
     try {
       const response = await notificationsAPI.getNotifications();
       setNotifications(response.data.notifications || []);
@@ -146,7 +163,6 @@ export const TaskProvider = ({ children }) => {
     loadTasks();
     loadNotifications();
 
-    // Poll for notifications every minute
     const interval = setInterval(loadNotifications, 60000);
     return () => clearInterval(interval);
   }, [loadTasks, loadNotifications]);
