@@ -12,7 +12,7 @@ const TaskList = ({ onEditTask }) => {
 
   const allTasks = getAllTasks();
 
-  // 1. Logika Filter (Berdasarkan Search & Sidebar)
+  // 1. Logika Filter (Search & Sidebar)
   const filteredTasks = allTasks.filter((task) => {
     const matchesSearch =
       searchTerm === "" ||
@@ -34,23 +34,67 @@ const TaskList = ({ onEditTask }) => {
     return matchesSearch && matchesFilter;
   });
 
-  // Logika Smart Sort: TANGGAL DULU, baru PRIORITAS
+  // 2. Logika Smart Sort: TANGGAL DULU, baru PRIORITAS
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    //TANGGAL (Deadline)
     const dateA = new Date(a.deadline || 0).setHours(0, 0, 0, 0);
     const dateB = new Date(b.deadline || 0).setHours(0, 0, 0, 0);
 
     if (dateA !== dateB) {
-      return dateA - dateB;
+      return dateA - dateB; 
     }
 
-    //PRIORITAS (High > Med > Low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     const pA = priorityOrder[a.priority] || 0;
     const pB = priorityOrder[b.priority] || 0;
 
-    return pB - pA;
+    return pB - pA; 
   });
+
+  // 3. Logika Pesan Kosong Dinamis
+  const getEmptyStateContent = () => {
+    if (searchTerm) {
+      return {
+        icon: "🔍",
+        title: "Pencarian tidak ditemukan",
+        desc: "Coba gunakan kata kunci lain."
+      };
+    }
+
+    switch (currentFilter) {
+      case "today":
+        return {
+          icon: "📅",
+          title: "Hari ini santai dulu",
+          desc: "Tidak ada deadline tugas untuk hari ini."
+        };
+      case "high":
+        return {
+          icon: "🔥",
+          title: "Aman terkendali",
+          desc: "Tidak ada tugas dengan prioritas tinggi."
+        };
+      case "in-progress":
+        return {
+          icon: "⏳",
+          title: "Belum ada progres",
+          desc: "Kamu belum mulai mengerjakan tugas apa pun."
+        };
+      case "done":
+        return {
+          icon: "📥",
+          title: "Belum ada yang selesai",
+          desc: "Selesaikan tugasmu agar muncul di sini!"
+        };
+      default:
+        return {
+          icon: "📝",
+          title: "Daftar tugas kosong",
+          desc: "Klik 'Tambah Tugas Baru' untuk memulai."
+        };
+    }
+  };
+
+  const emptyState = getEmptyStateContent();
 
   return (
     <div className="lg:col-span-2">
@@ -59,7 +103,6 @@ const TaskList = ({ onEditTask }) => {
           <h2 className="text-xl font-bold text-gray-800">Daftar Tugas</h2>
           
           <div className="flex items-center space-x-2 w-full sm:w-auto">
-            {/* Pencarian */}
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
               <input
@@ -71,21 +114,19 @@ const TaskList = ({ onEditTask }) => {
               />
             </div>
             
-            {/* Indikator Urutan Aktif */}
             <div className="flex items-center bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200 text-xs font-bold whitespace-nowrap">
               <Clock className="w-3 h-3 mr-1" />
-              Urutan: Waktu & Prioritas
+              Waktu & Prioritas
             </div>
           </div>
         </div>
 
         <div className="p-5">
           {sortedTasks.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-lg font-medium text-gray-500">
-                {searchTerm ? "Pencarian tidak ditemukan" : "Semua tugas selesai!"}
-              </h3>
+            <div className="text-center py-12">
+              <div className="text-5xl mb-4">{emptyState.icon}</div>
+              <h3 className="text-lg font-bold text-gray-700">{emptyState.title}</h3>
+              <p className="text-gray-400 mt-2 text-sm">{emptyState.desc}</p>
             </div>
           ) : (
             <div className="space-y-4">
