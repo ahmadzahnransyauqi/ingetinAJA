@@ -27,7 +27,9 @@ const TaskList = ({ onEditTask }) => {
     let matchesFilter = true;
     if (currentFilter === "today") {
       const today = new Date().toISOString().split("T")[0];
-      matchesFilter = task.deadline === today;
+      
+      matchesFilter = task.deadline?.split("T")[0] === today;
+      
     } else if (currentFilter === "high") {
       matchesFilter = task.priority === "high";
     } else if (currentFilter === "in-progress") {

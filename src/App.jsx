@@ -13,7 +13,8 @@ import { CheckCircle } from "lucide-react";
 
 function MainApp() {
   const { user, loading: authLoading } = useAuth();
-  const { createTask, updateTask } = useTask();
+ 
+  const { createTask, updateTask, setCurrentFilter } = useTask();
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -66,7 +67,10 @@ function MainApp() {
       <main className="container mx-auto px-4 py-6">
         {user ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Sidebar onAddTask={handleAddTask} onFilterChange={() => {}} />
+            <Sidebar 
+              onAddTask={handleAddTask} 
+              onFilterChange={setCurrentFilter} 
+            />
             <TaskList onEditTask={handleEditTask} />
           </div>
         ) : (
