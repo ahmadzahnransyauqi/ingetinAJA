@@ -132,7 +132,7 @@ function MainApp() {
       <footer className="bg-gray-800 text-white py-6">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">📝 IngetinAja - Pengelola Tugas Harian</p>
-          <p className="text-gray-400 text-xs mt-1">© {new Date().getFullYear()} Dibuat dengan ❤️ oleh Ahmad</p>
+          <p className="text-gray-400 text-xs mt-1">© {new Date().getFullYear()} Dibuat oleh tim RAR aja</p>
         </div>
       </footer>
 
