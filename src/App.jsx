@@ -45,7 +45,7 @@ function MainApp() {
   const handleSaveTask = async (taskData, taskId) => {
     if (taskId) {
       await updateTask(taskId, taskData);
-      
+    
       await loadNotifications(); 
       await loadTasks();
     } else {
@@ -82,9 +82,26 @@ function MainApp() {
               <CheckCircle className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
               <h1 className="text-3xl font-bold text-gray-800 mb-4">IngetinAja</h1>
               <p className="text-gray-600 mb-8">Kelola tugas harian dan kolaborasi tim Anda dengan mudah.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-left">
+                <div className="p-6 bg-indigo-50 rounded-lg">
+                  <div className="text-2xl mb-2">📋</div>
+                  <h3 className="font-bold text-gray-800">Kelola Tugas</h3>
+                  <p className="text-xs text-gray-600 mt-1">Buat, edit, dan pantau tugas harian.</p>
+                </div>
+                <div className="p-6 bg-green-50 rounded-lg">
+                  <div className="text-2xl mb-2">👥</div>
+                  <h3 className="font-bold text-gray-800">Kolaborasi</h3>
+                  <p className="text-xs text-gray-600 mt-1">Bagikan tugas dengan tim.</p>
+                </div>
+                <div className="p-6 bg-yellow-50 rounded-lg">
+                  <div className="text-2xl mb-2">⏰</div>
+                  <h3 className="font-bold text-gray-800">Pengingat</h3>
+                  <p className="text-xs text-gray-600 mt-1">Notifikasi otomatis sebelum deadline.</p>
+                </div>
+              </div>
               <div className="space-x-4">
-                <button onClick={() => handleOpenAuthModal("login")} className="bg-indigo-500 text-white py-3 px-6 rounded-lg font-medium">Login</button>
-                <button onClick={() => handleOpenAuthModal("register")} className="bg-white text-indigo-600 py-3 px-6 rounded-lg border border-indigo-600 font-medium">Register</button>
+                <button onClick={() => handleOpenAuthModal("login")} className="bg-indigo-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-600 transition">Login</button>
+                <button onClick={() => handleOpenAuthModal("register")} className="bg-white text-indigo-600 py-3 px-6 rounded-lg border border-indigo-600 font-medium hover:bg-gray-50 transition">Register</button>
               </div>
             </div>
           </div>
@@ -93,7 +110,7 @@ function MainApp() {
       <Notification />
       <footer className="bg-gray-800 text-white py-6 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm">
-          <p>© {new Date().getFullYear()} Dibuat oleh Ahmad Zahran Syauqi</p>
+          <p>© {new Date().getFullYear()} Dibuat oleh tim RAR aja</p>
         </div>
       </footer>
       {showTaskModal && <TaskModal isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} task={editingTask} onSave={handleSaveTask} />}
