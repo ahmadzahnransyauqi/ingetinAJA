@@ -13,8 +13,6 @@ import { CheckCircle } from "lucide-react";
 
 function MainApp() {
   const { user, loading: authLoading } = useAuth();
-  
-  // Mengambil fungsi load data dari TaskContext
   const { createTask, updateTask, setCurrentFilter, loadTasks, loadNotifications } = useTask();
 
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -22,7 +20,7 @@ function MainApp() {
   const [editingTask, setEditingTask] = useState(null);
   const [authMode, setAuthMode] = useState("login");
 
-  // Pemicu pengambilan data otomatis saat login
+  // Load data otomatis saat login
   useEffect(() => {
     if (user) {
       loadTasks();
@@ -48,9 +46,12 @@ function MainApp() {
   const handleSaveTask = async (taskData, taskId) => {
     if (taskId) {
       await updateTask(taskId, taskData);
+     
+      await loadNotifications(); 
     } else {
       await createTask(taskData);
     }
+    setShowTaskModal(false);
   };
 
   const handleOpenAuthModal = (mode) => {
@@ -72,28 +73,16 @@ function MainApp() {
 
       <main className="container mx-auto px-4 py-6 flex-grow">
         {user ? (
-          /* Tampilan Dashboard Utama */
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Sidebar 
-              onAddTask={handleAddTask} 
-              onFilterChange={setCurrentFilter} 
-            />
+            <Sidebar onAddTask={handleAddTask} onFilterChange={setCurrentFilter} />
             <TaskList onEditTask={handleEditTask} />
           </div>
         ) : (
-          /* Tampilan Landing Page */
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow p-8 text-center">
               <CheckCircle className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
-              <h1 className="text-3xl font-bold text-gray-800 mb-4">
-                Selamat Datang di IngetinAja
-              </h1>
-              <p className="text-gray-600 mb-8">
-                Aplikasi pengelola tugas harian yang membantu Anda mengatur
-                pekerjaan, berkolaborasi dengan tim, dan tidak pernah melewatkan
-                deadline.
-              </p>
-
+              <h1 className="text-3xl font-bold text-gray-800 mb-4">Selamat Datang di IngetinAja</h1>
+              <p className="text-gray-600 mb-8">Aplikasi pengelola tugas harian yang membantu Anda mengatur pekerjaan dan kolaborasi.</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="p-6 bg-indigo-50 rounded-lg">
                   <div className="text-2xl mb-2">📋</div>
@@ -103,28 +92,17 @@ function MainApp() {
                 <div className="p-6 bg-green-50 rounded-lg">
                   <div className="text-2xl mb-2">👥</div>
                   <h3 className="font-bold text-gray-800 mb-2">Kolaborasi</h3>
-                  <p className="text-sm text-gray-600">Bagikan tugas dengan tim dan kerjakan bersama</p>
+                  <p className="text-sm text-gray-600">Bagikan tugas dengan tim Anda</p>
                 </div>
                 <div className="p-6 bg-yellow-50 rounded-lg">
                   <div className="text-2xl mb-2">⏰</div>
                   <h3 className="font-bold text-gray-800 mb-2">Pengingat</h3>
-                  <p className="text-sm text-gray-600">Dapatkan notifikasi sebelum deadline tiba</p>
+                  <p className="text-sm text-gray-600">Dapatkan notifikasi sebelum deadline</p>
                 </div>
               </div>
-
               <div className="space-x-4">
-                <button
-                  onClick={() => handleOpenAuthModal("login")}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-6 rounded-lg transition duration-200"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => handleOpenAuthModal("register")}
-                  className="bg-white hover:bg-gray-50 text-indigo-600 font-medium py-3 px-6 rounded-lg border border-indigo-600 transition duration-200"
-                >
-                  Register
-                </button>
+                <button onClick={() => handleOpenAuthModal("login")} className="bg-indigo-500 text-white py-3 px-6 rounded-lg font-medium">Login</button>
+                <button onClick={() => handleOpenAuthModal("register")} className="bg-white text-indigo-600 py-3 px-6 rounded-lg border border-indigo-600 font-medium">Register</button>
               </div>
             </div>
           </div>
@@ -134,28 +112,13 @@ function MainApp() {
       <Notification />
 
       <footer className="bg-gray-800 text-white py-6 mt-auto">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm">📝 IngetinAja - Pengelola Tugas Harian</p>
-          <p className="text-gray-400 text-xs mt-1">© {new Date().getFullYear()} Dibuat dengan ❤️ oleh Ahmad</p>
+        <div className="container mx-auto px-4 text-center text-sm">
+          <p>© {new Date().getFullYear()} Dibuat oleh Ahmad Zahran Syauqi</p>
         </div>
       </footer>
 
-      {showTaskModal && (
-        <TaskModal
-          isOpen={showTaskModal}
-          onClose={() => setShowTaskModal(false)}
-          task={editingTask}
-          onSave={handleSaveTask}
-        />
-      )}
-
-      {showAuthModal && (
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          mode={authMode}
-        />
-      )}
+      {showTaskModal && <TaskModal isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} task={editingTask} onSave={handleSaveTask} />}
+      {showAuthModal && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} mode={authMode} />}
     </div>
   );
 }
