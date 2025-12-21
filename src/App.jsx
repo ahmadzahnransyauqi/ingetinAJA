@@ -6,6 +6,7 @@ import Sidebar from "./components/Sidebar";
 import TaskList from "./components/TaskList";
 import TaskModal from "./components/TaskModal";
 import AuthModal from "./components/AuthModal";
+import Notification from "./components/Notification";
 import { useAuth } from "./contexts/AuthContext";
 import { useTask } from "./contexts/TaskContext";
 import { CheckCircle } from "lucide-react";
@@ -13,20 +14,21 @@ import { CheckCircle } from "lucide-react";
 function MainApp() {
   const { user, loading: authLoading } = useAuth();
   
-  //ngambil data pas login
-  const { createTask, updateTask, setCurrentFilter, loadTasks } = useTask();
+  // Mengambil fungsi load data dari TaskContext
+  const { createTask, updateTask, setCurrentFilter, loadTasks, loadNotifications } = useTask();
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [authMode, setAuthMode] = useState("login");
 
-
+  // Pemicu pengambilan data otomatis saat login
   useEffect(() => {
     if (user) {
       loadTasks();
+      loadNotifications(); 
     }
-  }, [user, loadTasks]);
+  }, [user, loadTasks, loadNotifications]);
 
   const handleAddTask = () => {
     if (!user) {
@@ -65,11 +67,12 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
       <Header />
 
       <main className="container mx-auto px-4 py-6 flex-grow">
         {user ? (
+          /* Tampilan Dashboard Utama */
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Sidebar 
               onAddTask={handleAddTask} 
@@ -78,7 +81,7 @@ function MainApp() {
             <TaskList onEditTask={handleEditTask} />
           </div>
         ) : (
-          //tampilan depan 
+          /* Tampilan Landing Page */
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow p-8 text-center">
               <CheckCircle className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
@@ -91,7 +94,6 @@ function MainApp() {
                 deadline.
               </p>
 
-              {/* Grid fitur yg di depan */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="p-6 bg-indigo-50 rounded-lg">
                   <div className="text-2xl mb-2">📋</div>
@@ -129,10 +131,12 @@ function MainApp() {
         )}
       </main>
 
-      <footer className="bg-gray-800 text-white py-6">
+      <Notification />
+
+      <footer className="bg-gray-800 text-white py-6 mt-auto">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">📝 IngetinAja - Pengelola Tugas Harian</p>
-          <p className="text-gray-400 text-xs mt-1">© {new Date().getFullYear()} Dibuat oleh tim RAR aja</p>
+          <p className="text-gray-400 text-xs mt-1">© {new Date().getFullYear()} Dibuat dengan ❤️ oleh Ahmad</p>
         </div>
       </footer>
 

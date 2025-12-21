@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bell, X } from "lucide-react";
+import { Bell, X, Info } from "lucide-react";
 import { useTask } from "../contexts/TaskContext";
 
 const Notification = () => {
@@ -8,18 +8,20 @@ const Notification = () => {
   const [currentNotification, setCurrentNotification] = useState(null);
 
   useEffect(() => {
+   
     if (notifications.length > 0 && !showPopup) {
+     
       setCurrentNotification(notifications[0]);
       setShowPopup(true);
 
-      // Auto-hide after 10 seconds
+    
       const timer = setTimeout(() => {
         setShowPopup(false);
       }, 10000);
 
       return () => clearTimeout(timer);
     }
-  }, [notifications]);
+  }, [notifications, showPopup]);
 
   const handleClose = () => {
     setShowPopup(false);
@@ -27,35 +29,41 @@ const Notification = () => {
 
   return (
     <>
-      {/* Notification Bell with Badge */}
-      <div className="relative">
-        <Bell className="w-6 h-6 cursor-pointer" />
-        {notifications.length > 0 && (
-          <div className="notification-badge">{notifications.length}</div>
-        )}
-      </div>
-
-      {/* Notification Popup */}
+   
       {showPopup && currentNotification && (
-        <div className="fixed top-4 right-4 w-80 bg-white rounded-lg shadow-lg border-l-4 border-yellow-500 z-50">
+        <div className="fixed top-20 right-4 w-80 bg-white rounded-xl shadow-2xl border-l-4 border-indigo-500 z-[9999] animate-bounce-subtle">
           <div className="p-4">
             <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-gray-800">Pengingat Tugas!</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {currentNotification.message}
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  {currentNotification.time}
-                </p>
+              <div className="flex gap-3">
+                <div className="bg-indigo-100 p-2 rounded-lg h-fit">
+                  <Bell className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-800 text-sm">
+                    Pengingat Tugas!
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                    {currentNotification.message}
+                  </p>
+                  <p className="text-[10px] text-indigo-400 mt-2 font-medium">
+                  
+                    {new Date(currentNotification.createdAt || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
               </div>
+              
               <button
                 onClick={handleClose}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+          </div>
+          
+        
+          <div className="h-1 bg-gray-100 w-full rounded-b-xl overflow-hidden">
+             <div className="h-full bg-indigo-500 animate-shrink-width"></div>
           </div>
         </div>
       )}
